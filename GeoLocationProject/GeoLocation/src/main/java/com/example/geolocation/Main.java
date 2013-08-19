@@ -11,6 +11,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.app.Activity;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
@@ -25,13 +26,13 @@ import android.widget.Toast;
 public class Main extends Activity implements LocationListener {
 
     private TextView latitude, longitude, distance;
-    private Button getLocation;
     private LocationManager locationManager;
     private String provider;
 
     double distance_travelled;
-    double latitude_prev;
-    double longitude_prev;
+    double latitude_prev = 0;
+    double longitude_prev = 0;
+    static double total_dist = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,45 +42,11 @@ public class Main extends Activity implements LocationListener {
         latitude = (TextView)findViewById(R.id.txt_latitude);
         longitude = (TextView)findViewById(R.id.txt_longitude);
         distance = (TextView) findViewById(R.id.txt_distance);
-        getLocation = (Button)findViewById(R.id.btn_getLocation);
 
         checkGps();
 
         getCurrentLocation();
 
-        getLocation.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                locatorRunner();
-            }
-        });
-
-    }
-
-    private void locatorRunner(){
-        Thread thread = new Thread()
-        {
-            @Override
-            public void run() {
-                try {
-                    while(true) {
-                        sleep(3000);
-
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                 /*needs UI Thread*/
-                                getCurrentLocation();
-                            }
-                        });
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-
-        thread.start();
     }
 
     private void getCurrentLocation(){
@@ -177,32 +144,51 @@ public class Main extends Activity implements LocationListener {
     }
 
     private void getLocation(Location location){
-
-        int R = 6371;
-
         double lat = location.getLatitude();
         double lon = location.getLongitude();
 
-        latitude_prev = lat;
-        longitude_prev = lon;
+        Log.v("The current Latitude", String.valueOf(lat));
+        Log.v("The current Longitude", String.valueOf(lon));
 
-        Double dlat = latitude_prev - lat;
-        Double dlon = longitude_prev - lon;
+        Log.v("The previous Latitude", String.valueOf(latitude_prev));
+        Log.v("The previous Longitude", String.valueOf(longitude_prev));
 
-        double a = Math.sin(dlat / 2) * Math.sin(dlat / 2) + Math.cos(latitude_prev) *
-                Math.cos(lat) * Math.sin(dlon / 2) * Math.sin(dlon / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        if(latitude_prev==0&&longitude_prev==0){
+            latitude_prev = lat;
+            longitude_prev = lon;
+            distance_travelled = 0;
+        }else{
+            /*get the distance covered from point A to point B*/
+            distance_travelled = distanceTravelled(latitude_prev, longitude_prev, lat, lon);
+            /*set previous latitude and longitude to the last location*/
+            latitude_prev = lat;
+            longitude_prev = lon;
 
-        distance_travelled =  R * c;
-
-        latitude.setText(String.valueOf(lat));
-        longitude.setText(String.valueOf(lon));
-        distance.setText(String.valueOf(distance_travelled));
+            latitude.setText(String.valueOf(lat));
+            longitude.setText(String.valueOf(lon));
+            distance.setText(String.valueOf(distance_travelled));
+        }
     }
 
-    /*private double toRad(double d) {
-        return d * Math.PI / 180;
-    }*/
+    private static Double distanceTravelled(double lat1, double lng1, double lat2, double lng2){
+            double earthRadius = 6371;
+            double dLat = Math.toRadians(lat2-lat1);
+            double dLng = Math.toRadians(lng2-lng1);
+            double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                            Math.sin(dLng/2) * Math.sin(dLng/2);
+            double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            double dist =  earthRadius * c;
+
+
+            total_dist = total_dist + dist;
+
+            /*just in case it is needed to be converted in meters use this part*/
+            /*int meterConversion = 1000;
+            return Double.valueOf(dist * meterConversion);*/
+
+        return total_dist;
+    }
 
     @Override
     public void onStatusChanged(String s, int i, Bundle bundle) {
