@@ -95,16 +95,16 @@ public class Main extends Activity implements LocationListener {
         alertDialog.setTitle("Settings para sa lokasyon"); /*should be on a string values*/
 
         alertDialog
-                .setMessage("Kasalukuyang hindi aktibo ang iyong GPS para makuha ang iyong lokasyon. Nais mo bang i-set ito ngayon?")
+                .setMessage("Your GPS is not active, do you wish to setup your GPS?")
                 .setCancelable(false)
-                .setPositiveButton("Oo", new DialogInterface.OnClickListener() {
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                         startActivity(intent);
                     }
                 })
-                .setNegativeButton("Hindi", new DialogInterface.OnClickListener() {
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         dialogInterface.cancel();
